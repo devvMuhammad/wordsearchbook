@@ -1,111 +1,93 @@
-'use client'
+'use client';
 
-import { generateWordSearch, WordSearchResult } from '@/actions/generateWordSearch'
-import { useState } from 'react'
+import { useRef, useState } from 'react';
+import { generatePDF } from '@/actions/generatePdf';
+import { generateWordSearch, WordSearchResult } from '@/actions/generateWordSearch';
+import Puzzle from "@/app/puzzle"
+import { generateBook } from '@/actions/generateBook';
+import PuzzleForm from './form/page';
+import { BookInputsType } from '@/types';
 
-// Predefined colors for words (you can add more)
-const HIGHLIGHT_COLORS = [
-  'bg-red-300',
-  'bg-blue-400',
-  'bg-green-400',
-  'bg-yellow-400',
-  'bg-purple-400',
-  'bg-pink-400',
-  'bg-orange-400',
-  'bg-teal-400',
-  'bg-indigo-400',
-  'bg-cyan-400',
-  'bg-lime-400',
-  'bg-rose-400',
-];
+// Common styles as objects
+const buttonStyle = {
+  marginBottom: '1rem',
+  backgroundColor: '#3b82f6',
+  color: 'white',
+  padding: '0.5rem 1rem',
+  borderRadius: '0.375rem',
+  cursor: 'pointer'
+};
 
-export default function WordSearchGame() {
-  const [puzzle, setPuzzle] = useState<WordSearchResult | null>(null)
 
-  async function handleGenerate() {
-    const result = await generateWordSearch([
-      "SCIENCE", "ECONOMICS", "NOVEL", "STORY",
-      "BIOGRAPHY", "MUHAMMAD"
-    ], 15)
-    setPuzzle(result)
+export default function WordSearchGamePDF() {
+  const puzzleRef = useRef<HTMLDivElement>(null);
+  const [puzzles, setPuzzles] = useState<WordSearchResult[] | null>(null)
+
+  async function handleGenerate(args: BookInputsType) {
+    const puzzles = await generateBook(args);
+    setPuzzles(puzzles);
   }
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  // Function to get background color for a cell
-  function getCellBackground(wordIndices: number[], showAll: boolean) {
+  const handleGeneratePDF = async () => {
+    if (!puzzleRef.current) return;
 
-    if (showAll && wordIndices.length > 0) {
-      // Show the color of the first word this cell belongs to
-      return HIGHLIGHT_COLORS[wordIndices[0] % HIGHLIGHT_COLORS.length] + " " + "bg-opacity-50";
+    try {
+      setIsGenerating(true);
+
+      // Get the HTML content of the puzzle
+      const htmlContent = puzzleRef.current.innerHTML;
+      if (!htmlContent) {
+        throw new Error('Failed to get HTML content');
+      }
+      console.log("this is the html content to be sent", htmlContent)
+      // Call the server action
+      const pdfBase64 = await generatePDF(htmlContent);
+
+      // Create a download link
+      const link = document.createElement('a');
+      link.href = `data:application/pdf;base64,${pdfBase64}`;
+      link.download = 'wordsearch.pdf';
+      link.click();
+
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
-
-    return '';
-  }
-
-  // Function to render either solved or unsolved grid
-  function renderGrid(showSolution: boolean) {
-    if (!puzzle) return null;
-
-    return (
-      <div className="grid font-mono">
-        {puzzle.grid.map((row, i) => (
-          <div key={i} className="flex">
-            {row.map((cell, j) => (
-              <div
-                key={j}
-                className={`
-                  text-3xl
-                  w-10 h-10 flex items-center justify-center border
-                  ${showSolution ? getCellBackground(cell.wordIndices, true) : ''}
-                `}
-              >
-                {cell.letter}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
+  };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="p-4">
+
+      <PuzzleForm onGenerate={handleGenerate} />
       <button
+        onClick={handleGeneratePDF}
+        disabled={isGenerating}
+        className="mb-4 mr-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"
+      >
+        {isGenerating ? 'Generating PDF...' : 'Download as PDF'}
+      </button>
+      {/* <button
         onClick={handleGenerate}
-        className="mb-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+        style={buttonStyle}
       >
         Generate Puzzle
-      </button>
+      </button> */}
+      <div ref={puzzleRef}>
+        {/* Display the unsolved versions and then the unsolved versions  */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", margin: "2rem", fontFamily: "monospace" }}>
+          {puzzles && puzzles.map((puzzle, index) => (
+            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={false} />
+          ))}
 
-      {puzzle && (
-        <div className="flex gap-8">
-          {/* Unsolved puzzle */}
-          <div className='flex gap-10'>
-            <div>
-
-              <h2 className="font-bold text-lg mb-2">Random Topic</h2>
-              {renderGrid(false)}
-            </div>
-            <div className="mt-4">
-              <h3 className='font-bold mb-2'>Words to find:</h3>
-              <div className="flex flex-col gap-1">
-                {puzzle.words.map((word) => (
-                  <div
-                    key={word}
-                  >
-                    {word}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          {puzzles && puzzles.map((puzzle, index) => (
+            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={true} />
+          ))}
 
         </div>
-      )}
-      <div className='mt-6'>
-        <h2 className="font-bold mb-2">Solution</h2>
-        {renderGrid(true)}
       </div>
     </div>
-  )
+  );
 }
