@@ -2,7 +2,7 @@
 
 import puppeteer from 'puppeteer';
 
-export async function generatePDF(html: string) {
+export async function generatePDF(html: string, paperSize: "A4" | "A5") {
   try {
     const browser = await puppeteer.launch({"headless":true});
     
@@ -17,19 +17,20 @@ export async function generatePDF(html: string) {
 
     // Set content with proper styling
     await page.setContent(html, {
-      waitUntil: 'networkidle0'
+      waitUntil: 'networkidle0',
+      timeout:500 * 1000,
     });
 
     // Generate PDF with custom settings
     const pdf = await page.pdf({
-      format: 'A4',
+      format: paperSize,
       printBackground: true,
       margin: {
-        top: '10px',
         right: '10px',
         bottom: '10px',
         left: '10px'
-      }
+      },
+      timeout: 500 * 1000,
     });
 
     await browser.close();

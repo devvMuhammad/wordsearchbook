@@ -1,67 +1,87 @@
+// page.tsx
 'use client';
 
 import { useRef, useState } from 'react';
 import { generatePDF } from '@/actions/generatePdf';
-import { generateWordSearch, WordSearchResult } from '@/actions/generateWordSearch';
 import Puzzle from "@/app/puzzle"
 import { generateBook } from '@/actions/generateBook';
-import PuzzleForm from './form/page';
-import { BookInputsType } from '@/types';
+import { BookInputsType, WordSearchResult } from '@/types';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import FormFields from './form/page';
 
-// Common styles as objects
-const buttonStyle = {
-  marginBottom: '1rem',
-  backgroundColor: '#3b82f6',
-  color: 'white',
-  padding: '0.5rem 1rem',
-  borderRadius: '0.375rem',
-  cursor: 'pointer'
-};
+const formSchema = z.object({
+  topic: z.string().nonempty(),
+  pagesPerPuzzle: z.number().min(1).max(100),
+  paperSize: z.enum(["A4", "A5"]),
+  downloadFormat: z.enum(["PDF", "DOCX", "PNG"]),
+  wordsPerPuzzle: z.number().min(1).max(50),
+});
 
+type FormData = z.infer<typeof formSchema>;
 
 export default function WordSearchGamePDF() {
   const puzzleRef = useRef<HTMLDivElement>(null);
-  const [puzzles, setPuzzles] = useState<WordSearchResult[] | null>(null)
+  const [puzzles, setPuzzles] = useState<WordSearchResult[] | null>(null);
+  const [generationTime, setGenerationTime] = useState<number | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  async function handleGenerate(args: BookInputsType) {
-    const puzzles = await generateBook(args);
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      pagesPerPuzzle: 1,
+      paperSize: "A4",
+      downloadFormat: "PDF",
+      wordsPerPuzzle: 10,
+    },
+  });
+
+  console.log(form.getValues());
+
+
+  async function handleGenerate(data: FormData) {
+    const bookInput: BookInputsType = {
+      pagesCount: data.pagesPerPuzzle,
+      paperFormat: data.paperSize,
+      wordsCountPerPuzzle: data.wordsPerPuzzle,
+      topic: data.topic
+    };
+    const puzzles = await generateBook(bookInput);
     setPuzzles(puzzles);
   }
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGeneratePDF = async () => {
     if (!puzzleRef.current) return;
-
+    const start = performance.now()
     try {
       setIsGenerating(true);
-
-      // Get the HTML content of the puzzle
       const htmlContent = puzzleRef.current.innerHTML;
       if (!htmlContent) {
         throw new Error('Failed to get HTML content');
       }
-      console.log("this is the html content to be sent", htmlContent)
-      // Call the server action
-      const pdfBase64 = await generatePDF(htmlContent);
-
-      // Create a download link
+      const pdfBase64 = await generatePDF(htmlContent, form.getValues('paperSize'));
       const link = document.createElement('a');
       link.href = `data:application/pdf;base64,${pdfBase64}`;
       link.download = 'wordsearch.pdf';
       link.click();
-
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to generate PDF. Please try again.');
     } finally {
+      const end = performance.now()
       setIsGenerating(false);
+      setGenerationTime(parseFloat(((end - start) / 1000).toFixed(2)));
     }
   };
 
   return (
     <div className="p-4">
+      <FormFields
+        form={form}
+        onSubmit={form.handleSubmit(handleGenerate)}
+      />
 
-      <PuzzleForm onGenerate={handleGenerate} />
       <button
         onClick={handleGeneratePDF}
         disabled={isGenerating}
@@ -69,23 +89,20 @@ export default function WordSearchGamePDF() {
       >
         {isGenerating ? 'Generating PDF...' : 'Download as PDF'}
       </button>
-      {/* <button
-        onClick={handleGenerate}
-        style={buttonStyle}
-      >
-        Generate Puzzle
-      </button> */}
+      {generationTime !== null && (
+        <p className="text-gray-600 mb-4">
+          Download time: {generationTime} seconds
+        </p>
+      )}
+
       <div ref={puzzleRef}>
-        {/* Display the unsolved versions and then the unsolved versions  */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", margin: "2rem", fontFamily: "monospace" }}>
           {puzzles && puzzles.map((puzzle, index) => (
-            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={false} />
+            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={false} paperFormat={form.watch("paperSize")} />
           ))}
-
           {puzzles && puzzles.map((puzzle, index) => (
-            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={true} />
+            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={true} paperFormat={form.watch("paperSize")} />
           ))}
-
         </div>
       </div>
     </div>

@@ -11,10 +11,13 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.10.0",
+    "@react-pdf/renderer": "^4.2.1",
+    "@types/pdfmake": "^0.2.11",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.10.2",
     "jspdf": "^2.5.2",
     "next": "15.1.6",
+    "pdfmake": "^0.2.18",
     "puppeteer": "^24.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

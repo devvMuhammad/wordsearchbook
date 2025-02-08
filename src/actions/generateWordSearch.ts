@@ -1,17 +1,10 @@
 'use server'
 
-export type GridCell = {
-  letter: string;
-  wordIndices: number[];  // Store indices of words this cell belongs to
-}
+import { GridCell, WordSearchResult } from "@/types";
 
-export type WordSearchResult = {
-  grid: GridCell[][];
-  words: string[];
-  size: number;
-}
 
 export async function generateWordSearch(
+  topic: string,
   words: string[],
   size: number = 15
 ): Promise<WordSearchResult> {
@@ -39,11 +32,11 @@ export async function generateWordSearch(
       const direction = directions[Math.floor(Math.random() * directions.length)];
       const [dx, dy] = direction;
 
-      let startY = dy < 0 
+      const startY = dy < 0 
         ? Math.floor(Math.random() * size)
         : Math.floor(Math.random() * (size - word.length));
 
-      let startX = dx < 0
+      const startX = dx < 0
         ? Math.floor(Math.random() * size)
         : Math.floor(Math.random() * (size - word.length));
 
@@ -108,6 +101,7 @@ export async function generateWordSearch(
   fillBlanks();
 
   return {
+    topic,
     grid,
     words: placedWords,
     size

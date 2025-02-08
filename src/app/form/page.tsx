@@ -1,40 +1,22 @@
 "use client";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { BookInputsType } from "@/types";
+import { UseFormReturn } from "react-hook-form";
 
-const formSchema = z.object({
-  topic: z.string().nonempty(),
-  pagesPerPuzzle: z.number().min(1).max(100),
-  paperSize: z.enum(["A4", "A5"]),
-  downloadFormat: z.enum(["PDF", "DOCX", "PNG"]),
-  wordsPerPuzzle: z.number().min(1).max(50),
-});
+type FormFieldsProps = {
+  form: UseFormReturn<{
+    topic: string;
+    pagesPerPuzzle: number;
+    paperSize: "A4" | "A5";
+    downloadFormat: "PDF" | "DOCX" | "PNG";
+    wordsPerPuzzle: number;
+  }>;
+  onSubmit: () => void;
+};
 
-type FormData = z.infer<typeof formSchema>;
-
-export default function PuzzleForm({ onGenerate }: { onGenerate: (data: BookInputsType) => void }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      pagesPerPuzzle: 1,
-      paperSize: "A4",
-      downloadFormat: "PDF",
-      wordsPerPuzzle: 10,
-    },
-  });
-
-  const onSubmit = (data: FormData) => {
-    onGenerate({ "pagesCount": data.pagesPerPuzzle, "paperFormat": data.paperSize, "wordsCountPerPuzzle": data.wordsPerPuzzle, "topic": data.topic });
-  };
+export default function FormFields({ form, onSubmit }: FormFieldsProps) {
+  const { register, formState: { errors } } = form;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 max-w-xl">
+    <form onSubmit={onSubmit} className="p-6 space-y-6 max-w-xl">
       <h1 className="text-xl font-bold">Enter the Details</h1>
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
