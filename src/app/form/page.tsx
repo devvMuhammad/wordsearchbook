@@ -8,11 +8,13 @@ type FormFieldsProps = {
     paperSize: "A4" | "A5";
     downloadFormat: "PDF" | "DOCX" | "PNG";
     wordsPerPuzzle: number;
+    colorMode: "colored" | "bw";
   }>;
+  isGenerating: boolean;
   onSubmit: () => void;
 };
 
-export default function FormFields({ form, onSubmit }: FormFieldsProps) {
+export default function FormFields({ form, onSubmit, isGenerating }: FormFieldsProps) {
   const { register, formState: { errors } } = form;
 
   return (
@@ -71,6 +73,31 @@ export default function FormFields({ form, onSubmit }: FormFieldsProps) {
       </div>
 
       <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Color Mode</label>
+        <div className="flex gap-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="bw"
+              {...register("colorMode")}
+              className="mr-2"
+            />
+            Black & White
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="colored"
+              {...register("colorMode")}
+              className="mr-2"
+            />
+            Colored
+          </label>
+        </div>
+      </div>
+
+
+      <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
           Download Format
         </label>
@@ -101,9 +128,10 @@ export default function FormFields({ form, onSubmit }: FormFieldsProps) {
 
       <button
         type="submit"
-        className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+        disabled={isGenerating}
+        className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Generate Puzzle
+        {isGenerating ? 'Generating words...' : 'Generate Puzzle'}
       </button>
     </form>
   );

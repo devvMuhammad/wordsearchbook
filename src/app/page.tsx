@@ -1,4 +1,3 @@
-// page.tsx
 'use client';
 
 import { useRef, useState } from 'react';
@@ -17,7 +16,9 @@ const formSchema = z.object({
   paperSize: z.enum(["A4", "A5"]),
   downloadFormat: z.enum(["PDF", "DOCX", "PNG"]),
   wordsPerPuzzle: z.number().min(1).max(50),
+  colorMode: z.enum(["colored", "bw"]), // Add this
 });
+
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -34,6 +35,7 @@ export default function WordSearchGamePDF() {
       paperSize: "A4",
       downloadFormat: "PDF",
       wordsPerPuzzle: 10,
+      colorMode: "bw",
     },
   });
 
@@ -41,14 +43,19 @@ export default function WordSearchGamePDF() {
 
 
   async function handleGenerate(data: FormData) {
-    const bookInput: BookInputsType = {
-      pagesCount: data.pagesPerPuzzle,
-      paperFormat: data.paperSize,
-      wordsCountPerPuzzle: data.wordsPerPuzzle,
-      topic: data.topic
-    };
-    const puzzles = await generateBook(bookInput);
-    setPuzzles(puzzles);
+    setIsGenerating(true);
+    try {
+      const bookInput: BookInputsType = {
+        pagesCount: data.pagesPerPuzzle,
+        paperFormat: data.paperSize,
+        wordsCountPerPuzzle: data.wordsPerPuzzle,
+        topic: data.topic
+      };
+      const puzzles = await generateBook(bookInput);
+      setPuzzles(puzzles);
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   const handleGeneratePDF = async () => {
@@ -80,6 +87,7 @@ export default function WordSearchGamePDF() {
       <FormFields
         form={form}
         onSubmit={form.handleSubmit(handleGenerate)}
+        isGenerating={isGenerating}
       />
 
       <button
@@ -98,10 +106,24 @@ export default function WordSearchGamePDF() {
       <div ref={puzzleRef}>
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", margin: "2rem", fontFamily: "monospace" }}>
           {puzzles && puzzles.map((puzzle, index) => (
-            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={false} paperFormat={form.watch("paperSize")} />
+            <Puzzle
+              key={index}
+              puzzle={puzzle}
+              number={index + 1}
+              solved={false}
+              paperFormat={form.watch("paperSize")}
+              colorMode={form.watch("colorMode")}
+            />
           ))}
           {puzzles && puzzles.map((puzzle, index) => (
-            <Puzzle key={index} puzzle={puzzle} number={index + 1} solved={true} paperFormat={form.watch("paperSize")} />
+            <Puzzle
+              key={index}
+              puzzle={puzzle}
+              number={index + 1}
+              solved={true}
+              paperFormat={form.watch("paperSize")}
+              colorMode={form.watch("colorMode")}
+            />
           ))}
         </div>
       </div>

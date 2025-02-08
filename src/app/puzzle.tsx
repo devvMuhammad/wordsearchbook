@@ -2,7 +2,7 @@ import { WordSearchResult } from "@/types";
 import { Icons } from "@/icons";
 
 // Predefined colors for words
-const HIGHLIGHT_COLORS = [
+const BW_HIGHLIGHT_COLORS = [
   'rgba(0, 0, 0, 0.08)',      // Almost white
   'rgba(0, 0, 0, 0.20)',      // Very light gray
   'rgba(0, 0, 0, 0.32)',      // Light gray
@@ -17,9 +17,22 @@ const HIGHLIGHT_COLORS = [
   'rgba(0, 0, 0, 0.72)',      // Dark gray
 ];
 
+const COLORED_HIGHLIGHTS = [
+  'rgba(255, 99, 132, 0.3)',  // Red
+  'rgba(54, 162, 235, 0.3)',  // Blue
+  'rgba(255, 206, 86, 0.3)',  // Yellow
+  'rgba(75, 192, 192, 0.3)',  // Teal
+  'rgba(153, 102, 255, 0.3)', // Purple
+  'rgba(255, 159, 64, 0.3)',  // Orange
+  'rgba(199, 199, 199, 0.3)', // Gray
+  'rgba(83, 102, 255, 0.3)',  // Indigo
+  'rgba(255, 99, 255, 0.3)',  // Pink
+  'rgba(99, 255, 132, 0.3)',  // Green
+];
+
+
 const gridContainerStyle = {
   border: '2px solid black',
-  padding: '1rem',
   marginBottom: '2rem',
   width: 'fit-content',
 };
@@ -111,14 +124,21 @@ function Words({ words, paperFormat = 'A4' }: { words: string[], paperFormat?: '
   );
 }
 
-export function Grid({ grid, solution, paperFormat }: {
+export function Grid({
+  grid,
+  solution,
+  paperFormat,
+  colorMode = 'bw'
+}: {
   grid: WordSearchResult['grid'],
   solution: boolean,
-  paperFormat: 'A4' | 'A5'
+  paperFormat: 'A4' | 'A5',
+  colorMode: 'colored' | 'bw'
 }) {
   function getCellBackground(wordIndices: number[], showAll: boolean) {
     if (showAll && wordIndices.length > 0) {
-      return HIGHLIGHT_COLORS[wordIndices[0] % HIGHLIGHT_COLORS.length];
+      const colors = colorMode === 'colored' ? COLORED_HIGHLIGHTS : BW_HIGHLIGHT_COLORS;
+      return colors[wordIndices[0] % colors.length];
     }
     return '';
   }
@@ -132,7 +152,8 @@ export function Grid({ grid, solution, paperFormat }: {
               key={j}
               style={{
                 ...getCellStyle(paperFormat),
-                backgroundColor: solution ? getCellBackground(cell.wordIndices, true) : 'transparent'
+                backgroundColor: solution ? getCellBackground(cell.wordIndices, true) : 'transparent',
+                border: solution ? '1px solid black' : 'none',
               }}
             >
               {cell.letter}
@@ -148,12 +169,14 @@ export default function Puzzle({
   number,
   puzzle,
   solved,
-  paperFormat = 'A4'
+  paperFormat = 'A4',
+  colorMode = "bw"
 }: {
   number: number;
   puzzle: WordSearchResult;
   solved: boolean;
   paperFormat?: 'A4' | 'A5';
+  colorMode?: 'colored' | 'bw';
 }) {
   return (
     <div style={getContainerStyle(paperFormat)}>
@@ -165,7 +188,7 @@ export default function Puzzle({
       }}>
         {number}. {puzzle.topic}
       </h2>
-      <Grid grid={puzzle.grid} solution={solved} paperFormat={paperFormat} />
+      <Grid grid={puzzle.grid} solution={solved} paperFormat={paperFormat} colorMode={colorMode} />
       <Words words={puzzle.words} paperFormat={paperFormat} />
     </div>
   );
