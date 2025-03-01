@@ -13,11 +13,17 @@ import FormFields from './form/page';
 const formSchema = z.object({
   topic: z.string().nonempty(),
   pagesPerPuzzle: z.number().min(1).max(100),
-  paperSize: z.enum(["A4", "A5"]),
   downloadFormat: z.enum(["PDF", "DOCX", "PNG"]),
   wordsPerPuzzle: z.number().min(1).max(50),
-  colorMode: z.enum(["colored", "bw"]), // Add this
+  colorMode: z.enum(["colored", "bw"]),
+  paperFormat: z.enum(["A4", "A5"]),
+  pageSize: z.object({
+    width: z.number().min(1).max(50),
+    height: z.number().min(1).max(50)
+  }),
+  uploadedImage: z.string().optional(),
 });
+
 
 
 type FormData = z.infer<typeof formSchema>;
@@ -26,16 +32,21 @@ export default function WordSearchGamePDF() {
   const puzzleRef = useRef<HTMLDivElement>(null);
   const [puzzles, setPuzzles] = useState<WordSearchResult[] | null>(null);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       pagesPerPuzzle: 1,
-      paperSize: "A4",
       downloadFormat: "PDF",
       wordsPerPuzzle: 10,
       colorMode: "bw",
+      paperFormat: "A4",
+      pageSize: {
+        width: 8.27, // A4 width in inches
+        height: 11.69 // A4 height in inches
+      },
     },
   });
 
@@ -47,9 +58,10 @@ export default function WordSearchGamePDF() {
     try {
       const bookInput: BookInputsType = {
         pagesCount: data.pagesPerPuzzle,
-        paperFormat: data.paperSize,
         wordsCountPerPuzzle: data.wordsPerPuzzle,
-        topic: data.topic
+        topic: data.topic,
+        pageSize: data.pageSize,
+        paperFormat: data.paperFormat,
       };
       const puzzles = await generateBook(bookInput);
       setPuzzles(puzzles);
@@ -58,16 +70,28 @@ export default function WordSearchGamePDF() {
     }
   }
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        form.setValue('uploadedImage', e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleGeneratePDF = async () => {
     if (!puzzleRef.current) return;
     const start = performance.now()
+    setIsDownloading(true);
     try {
       setIsGenerating(true);
       const htmlContent = puzzleRef.current.innerHTML;
       if (!htmlContent) {
         throw new Error('Failed to get HTML content');
       }
-      const pdfBase64 = await generatePDF(htmlContent, form.getValues('paperSize'));
+      const pdfBase64 = await generatePDF(htmlContent);
       const link = document.createElement('a');
       link.href = `data:application/pdf;base64,${pdfBase64}`;
       link.download = 'wordsearch.pdf';
@@ -78,6 +102,7 @@ export default function WordSearchGamePDF() {
     } finally {
       const end = performance.now()
       setIsGenerating(false);
+      setIsDownloading(false);
       setGenerationTime(parseFloat(((end - start) / 1000).toFixed(2)));
     }
   };
@@ -88,14 +113,15 @@ export default function WordSearchGamePDF() {
         form={form}
         onSubmit={form.handleSubmit(handleGenerate)}
         isGenerating={isGenerating}
+        onImageUpload={handleImageUpload}
       />
 
       <button
         onClick={handleGeneratePDF}
-        disabled={isGenerating}
+        disabled={isDownloading || !puzzles}
         className="mb-4 mr-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400"
       >
-        {isGenerating ? 'Generating PDF...' : 'Download as PDF'}
+        {isDownloading ? 'Downloading PDF...' : 'Download as PDF'}
       </button>
       {generationTime !== null && (
         <p className="text-gray-600 mb-4">
@@ -111,8 +137,10 @@ export default function WordSearchGamePDF() {
               puzzle={puzzle}
               number={index + 1}
               solved={false}
-              paperFormat={form.watch("paperSize")}
+              paperFormat={form.watch("paperFormat")}
+              // pageSize={form.watch("pageSize")}
               colorMode={form.watch("colorMode")}
+              uploadedImage={form.watch("uploadedImage")}
             />
           ))}
           {puzzles && puzzles.map((puzzle, index) => (
@@ -121,8 +149,10 @@ export default function WordSearchGamePDF() {
               puzzle={puzzle}
               number={index + 1}
               solved={true}
-              paperFormat={form.watch("paperSize")}
+              // pageSize={form.watch("pageSize")}
+              paperFormat={form.watch("paperFormat")}
               colorMode={form.watch("colorMode")}
+              uploadedImage={form.watch("uploadedImage")}
             />
           ))}
         </div>

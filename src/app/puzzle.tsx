@@ -1,5 +1,6 @@
 import { WordSearchResult } from "@/types";
 import { Icons } from "@/icons";
+import Image from "next/image";
 
 // Predefined colors for words
 const BW_HIGHLIGHT_COLORS = [
@@ -35,6 +36,7 @@ const gridContainerStyle = {
   border: '2px solid black',
   marginBottom: '2rem',
   width: 'fit-content',
+  padding: "5px"
 };
 
 const wordListStyle = {
@@ -55,7 +57,7 @@ const getCellStyle = (paperFormat: 'A4' | 'A5' = 'A4') => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: paperFormat === 'A4' ? '1.4rem' : '1rem',
+  fontSize: paperFormat === 'A4' ? '1.4rem' : '1.1rem',
   fontFamily: 'Arial, sans-serif',
   fontWeight: 'bold' as const,
   textTransform: 'uppercase' as const,
@@ -74,7 +76,7 @@ const getContainerStyle = (paperFormat: 'A4' | 'A5' = 'A4') => ({
   fontFamily: 'Arial, sans-serif',
 });
 
-function Words({ words, paperFormat = 'A4' }: { words: string[], paperFormat?: 'A4' | 'A5' }) {
+function Words({ words, paperFormat = 'A4', uploadedImage }: { words: string[], paperFormat?: 'A4' | 'A5', uploadedImage: string }) {
   const wordStyle = {
     fontWeight: "bold",
     textAlign: "left" as const,
@@ -110,14 +112,27 @@ function Words({ words, paperFormat = 'A4' }: { words: string[], paperFormat?: '
               </span>
             ))}
           </div>
-          <Icons.flowers
-            width={paperFormat === 'A4' ? 200 : 120}
-            height={paperFormat === 'A4' ? 200 : 120}
-            style={{
-              maxWidth: '100%',
-              height: 'auto'
-            }}
-          />
+          {uploadedImage ? (
+            <Image
+              src={uploadedImage}
+              width={200}
+              height={200}
+              style={{
+                maxWidth: '100%',
+                height: 'auto'
+              }}
+              alt="User uploaded"
+            />
+          ) : (
+            <Icons.flowers
+              width={200}
+              height={200}
+              style={{
+                maxWidth: '100%',
+                height: 'auto'
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -170,13 +185,15 @@ export default function Puzzle({
   puzzle,
   solved,
   paperFormat = 'A4',
-  colorMode = "bw"
+  colorMode = "bw",
+  uploadedImage = "",
 }: {
   number: number;
   puzzle: WordSearchResult;
   solved: boolean;
   paperFormat?: 'A4' | 'A5';
   colorMode?: 'colored' | 'bw';
+  uploadedImage?: string;
 }) {
   return (
     <div style={getContainerStyle(paperFormat)}>
@@ -189,7 +206,7 @@ export default function Puzzle({
         {number}. {puzzle.topic}
       </h2>
       <Grid grid={puzzle.grid} solution={solved} paperFormat={paperFormat} colorMode={colorMode} />
-      <Words words={puzzle.words} paperFormat={paperFormat} />
+      <Words words={puzzle.words} paperFormat={paperFormat} uploadedImage={uploadedImage} />
     </div>
   );
 }

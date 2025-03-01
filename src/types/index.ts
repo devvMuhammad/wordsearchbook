@@ -3,6 +3,8 @@ export type BookInputsType = {
   wordsCountPerPuzzle: number;
   paperFormat: "A4" | "A5";
   topic: string;
+  pageSize?: PageSize;
+  uploadedImage?: string;
 }
 
 export type GridCell = {
@@ -14,6 +16,11 @@ export type WordSearchResult = {
   grid: GridCell[][];
   words: string[];
   size: number;
-  topic:string;
+  topic: string;
   format?: "A4" | "A5";
 }
+
+export type PageSize = {
+  width: number;
+  height: number;
+};

@@ -2,12 +2,11 @@
 
 import puppeteer from 'puppeteer';
 
-export async function generatePDF(html: string, paperSize: "A4" | "A5") {
+export async function generatePDF(html: string) {
   try {
-    const browser = await puppeteer.launch({"headless":true});
-    
+    const browser = await puppeteer.launch({ "headless": true });
     const page = await browser.newPage();
-    
+
     // Set viewport to ensure proper rendering
     await page.setViewport({
       width: 1024,
@@ -18,18 +17,21 @@ export async function generatePDF(html: string, paperSize: "A4" | "A5") {
     // Set content with proper styling
     await page.setContent(html, {
       waitUntil: 'networkidle0',
-      timeout:500 * 1000,
+      timeout: 500 * 1000,
     });
 
     // Generate PDF with custom settings
     const pdf = await page.pdf({
-      format: paperSize,
+
+      // width: `${pageSize.width}in`,
+      // height: `${pageSize.height}in`,
       printBackground: true,
       margin: {
         right: '10px',
         bottom: '10px',
         left: '10px'
       },
+      format: "A4",
       timeout: 500 * 1000,
     });
 
@@ -37,7 +39,7 @@ export async function generatePDF(html: string, paperSize: "A4" | "A5") {
 
     // Return base64 encoded PDF
     return Buffer.from(pdf).toString('base64');
-    
+
   } catch (error) {
     console.error('PDF generation failed:', error);
     throw new Error('Failed to generate PDF');
