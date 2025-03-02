@@ -22,6 +22,7 @@ const formSchema = z.object({
     height: z.number().min(1).max(50)
   }),
   uploadedImage: z.string().optional(),
+  showSolutions: z.boolean().default(true),
 });
 
 
@@ -47,11 +48,11 @@ export default function WordSearchGamePDF() {
         width: 8.27, // A4 width in inches
         height: 11.69 // A4 height in inches
       },
+      showSolutions: true,
     },
   });
 
   console.log(form.getValues());
-
 
   async function handleGenerate(data: FormData) {
     setIsGenerating(true);
@@ -60,7 +61,7 @@ export default function WordSearchGamePDF() {
         pagesCount: data.pagesPerPuzzle,
         wordsCountPerPuzzle: data.wordsPerPuzzle,
         topic: data.topic,
-        pageSize: data.pageSize,
+        "pageSize": data.pageSize,
         paperFormat: data.paperFormat,
       };
       const puzzles = await generateBook(bookInput);
@@ -138,18 +139,16 @@ export default function WordSearchGamePDF() {
               number={index + 1}
               solved={false}
               paperFormat={form.watch("paperFormat")}
-              // pageSize={form.watch("pageSize")}
               colorMode={form.watch("colorMode")}
               uploadedImage={form.watch("uploadedImage")}
             />
           ))}
-          {puzzles && puzzles.map((puzzle, index) => (
+          {puzzles && form.watch("showSolutions") && puzzles.map((puzzle, index) => (
             <Puzzle
               key={index}
               puzzle={puzzle}
               number={index + 1}
               solved={true}
-              // pageSize={form.watch("pageSize")}
               paperFormat={form.watch("paperFormat")}
               colorMode={form.watch("colorMode")}
               uploadedImage={form.watch("uploadedImage")}

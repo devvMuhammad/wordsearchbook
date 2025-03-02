@@ -13,6 +13,7 @@ type FormFieldsProps = {
       width: number;
       height: number;
     };
+    showSolutions: boolean;
   }>;
   isGenerating: boolean;
   onSubmit: () => void;
@@ -79,6 +80,20 @@ export default function FormFields({ form, onSubmit, isGenerating, onImageUpload
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
+          Download Format
+        </label>
+        <select
+          {...register("downloadFormat")}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="PDF">PDF</option>
+          <option value="DOCX">DOCX</option>
+          <option value="PNG">PNG</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
           Words per puzzle
         </label>
         <input
@@ -140,6 +155,17 @@ export default function FormFields({ form, onSubmit, isGenerating, onImageUpload
           )}
         </div>
       </div> */}
+
+      <div className="space-y-2">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            {...register("showSolutions")}
+            className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+          />
+          <span className="text-md font-medium text-gray-700">Include Solutions</span>
+        </label>
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Upload Image</label>
